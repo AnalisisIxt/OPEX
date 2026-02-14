@@ -34,6 +34,7 @@ const App: React.FC = () => {
   const [opTypes, setOpTypes] = useState<string[]>([]);
   const [coloniaCatalog, setColoniaCatalog] = useState<CatalogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -75,14 +76,20 @@ const App: React.FC = () => {
           setColoniaCatalog(DEFAULT_COLONIES);
         }
 
-      } catch (error) {
-        console.error('Error fetching data from Supabase:', error);
+      } catch (err: any) {
+        console.error('Error fetching data from Supabase:', err);
+        setError(err.message || 'Error de conexión con el servidor');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      setError('Faltan las variables de entorno de Supabase (URL o Anon Key). Por favor, agrégalas en el panel de Vercel.');
+      setLoading(false);
+    } else {
+      fetchData();
+    }
 
     const savedUser = localStorage.getItem('ixta_user');
     if (savedUser) setUser(JSON.parse(savedUser));
@@ -134,6 +141,26 @@ const App: React.FC = () => {
         <div className="flex flex-col items-center gap-4">
           <Shield className="w-12 h-12 text-blue-500 animate-pulse" />
           <p className="text-blue-500 font-black tracking-widest text-sm animate-pulse">CARGANDO SISTEMA...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-slate-900 border border-red-500/20 rounded-3xl p-8 text-center space-y-6">
+          <div className="inline-flex p-4 bg-red-500/10 rounded-2xl">
+            <Shield className="w-12 h-12 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-black text-white uppercase">ERROR DE SISTEMA</h2>
+          <p className="text-slate-400 text-sm leading-relaxed uppercase">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-xl transition-all uppercase"
+          >
+            REINTENTAR CONEXIÓN
+          </button>
         </div>
       </div>
     );

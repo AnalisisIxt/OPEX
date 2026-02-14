@@ -8,13 +8,16 @@ This contains everything you need to run your app locally.
 
 View your app in AI Studio: https://ai.studio/apps/drive/1lnUMeToZ9XeQxhKmfy2gFpUjCQilPUye
 
-## Run Locally
+## Ejecución Local
 
-**Prerequisites:**  Node.js
+**Requisitos:** Node.js
 
-
-1. Install dependencies:
+1. **Instalar dependencias:**
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+2. **Configurar [.env.local](.env.local):**
+   Debes agregar las siguientes claves:
+   - `VITE_SUPABASE_URL`: Tu URL del proyecto en Supabase
+   - `VITE_SUPABASE_ANON_KEY`: Tu clave anónima (Anon Key)
+   - `VITE_GEMINI_API_KEY`: Tu clave de Google Gemini
+3. **Iniciar la aplicación:**
    `npm run dev`
