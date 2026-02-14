@@ -91,8 +91,15 @@ const App: React.FC = () => {
       fetchData();
     }
 
-    const savedUser = localStorage.getItem('ixta_user');
-    if (savedUser) setUser(JSON.parse(savedUser));
+    try {
+      const savedUser = localStorage.getItem('ixta_user');
+      if (savedUser && savedUser !== 'undefined') {
+        setUser(JSON.parse(savedUser));
+      }
+    } catch (e) {
+      console.error('Error parsing saved user:', e);
+      localStorage.removeItem('ixta_user');
+    }
   }, []);
 
   // No longer syncing whole state to localStorage as primary source
