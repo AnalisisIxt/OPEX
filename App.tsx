@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { 
-  Home as HomeIcon, 
-  ClipboardList, 
-  BarChart3, 
-  Settings, 
+import {
+  Home as HomeIcon,
+  ClipboardList,
+  BarChart3,
+  Settings,
   PlusCircle,
   LogOut,
   Shield,
@@ -25,6 +25,7 @@ import UserProfile from './pages/UserProfile';
 import { Operative, User, CatalogEntry } from './types';
 import { OPERATIVE_TYPES, COLONIA_CATALOG as DEFAULT_COLONIES } from './constants';
 import { removeAccents } from './utils';
+import { supabase } from './lib/supabase';
 
 const App: React.FC = () => {
   const [operatives, setOperatives] = useState<Operative[]>([]);
@@ -32,110 +33,118 @@ const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [opTypes, setOpTypes] = useState<string[]>([]);
   const [coloniaCatalog, setColoniaCatalog] = useState<CatalogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedOps = localStorage.getItem('ixta_operatives');
-    if (savedOps) setOperatives(JSON.parse(savedOps));
-    
-    const savedTypes = localStorage.getItem('ixta_full_op_types');
-    if (savedTypes) setOpTypes(JSON.parse(savedTypes));
-    else setOpTypes(OPERATIVE_TYPES);
+    const fetchData = async () => {
+      try {
+        // Fetch Operatives
+        const { data: ops } = await supabase.from('operatives').select('*').order('created_at', { ascending: false });
+        if (ops) setOperatives(ops as Operative[]);
 
-    const savedColonies = localStorage.getItem('ixta_colonia_catalog');
-    if (savedColonies) setColoniaCatalog(JSON.parse(savedColonies));
-    else setColoniaCatalog(DEFAULT_COLONIES);
+        // Fetch Users (Profiles)
+        const { data: profs } = await supabase.from('profiles').select('*');
+        if (profs && profs.length > 0) {
+          setUsers(profs as User[]);
+        } else {
+          // SEED: If no users, create initial admin
+          const initialAdmin: User = { id: '1', fullName: 'ADMINISTRADOR PRINCIPAL', username: 'admin', password: 'adm123', role: 'ADMIN' };
+          const { error } = await supabase.from('profiles').insert([initialAdmin]);
+          if (!error) setUsers([initialAdmin]);
+        }
 
-    const savedUsers = localStorage.getItem('ixta_users');
-    let currentUsers: User[] = [];
-    if (savedUsers) {
-      currentUsers = JSON.parse(savedUsers);
-    } 
+        // Fetch Op Types
+        const { data: types } = await supabase.from('operative_types').select('name');
+        if (types && types.length > 0) {
+          setOpTypes(types.map(t => t.name));
+        } else {
+          // SEED: Operative Types
+          const typesToInsert = OPERATIVE_TYPES.map(name => ({ name }));
+          await supabase.from('operative_types').insert(typesToInsert);
+          setOpTypes(OPERATIVE_TYPES);
+        }
 
-    const initialUsers: User[] = [
-      { id: '1', fullName: 'ADMINISTRADOR PRINCIPAL', username: 'admin', password: 'adm123', role: 'ADMIN' },
-      { id: 'u1', fullName: 'DIRECTOR ALPHA', username: 'alpha', password: '123', role: 'DIRECTOR' },
-      { id: 'u2', fullName: 'DIRECTOR ISIS', username: 'isis', password: '123', role: 'DIRECTOR' },
-      { id: 'u3', fullName: 'DIRECTOR DELTA', username: 'delta', password: '123', role: 'DIRECTOR' },
-      { id: 'u4', fullName: 'REGIONAL POSEIDON', username: 'poseidon', password: '123', role: 'REGIONAL', assignedRegion: 'REGION 1' },
-      { id: 'u5', fullName: 'REGIONAL AGUILA', username: 'aguila', password: '123', role: 'REGIONAL', assignedRegion: 'REGION 2' },
-      { id: 'u6', fullName: 'REGIONAL EFESTO', username: 'efesto', password: '123', role: 'REGIONAL', assignedRegion: 'REGION 3' },
-      { id: 'u7', fullName: 'REGIONAL HERMES', username: 'hermes', password: '123', role: 'REGIONAL', assignedRegion: 'REGION 4' },
-      { id: 'u8', fullName: 'REGIONAL LIBRA', username: 'libra', password: '123', role: 'REGIONAL', assignedRegion: 'REGION 5' },
-      { id: 'u9', fullName: 'REGIONAL LINCE', username: 'lince', password: '123', role: 'REGIONAL', assignedRegion: 'REGION 6' },
-      { id: 'u10', fullName: 'REGIONAL CRATOS', username: 'cratos', password: '123', role: 'REGIONAL', assignedRegion: 'REGION 7' },
-      { id: 'u11', fullName: 'JEFE ANUBIS', username: 'anubis', password: '123', role: 'JEFE_AGRUPAMIENTO', isAgrupamiento: true },
-      { id: 'u12', fullName: 'JEFE CONDOR', username: 'condor', password: '123', role: 'JEFE_AGRUPAMIENTO', isAgrupamiento: true },
-    ];
+        // Fetch Colonia Catalog
+        const { data: colonies } = await supabase.from('colonia_catalog').select('*');
+        if (colonies && colonies.length > 0) {
+          setColoniaCatalog(colonies as CatalogEntry[]);
+        } else {
+          // SEED: Colonies (Careful with large data, maybe omit or seed in batches)
+          // For now, only seed if empty to avoid duplicates
+          await supabase.from('colonia_catalog').insert(DEFAULT_COLONIES.slice(0, 100)); // Seed first 100 as sample
+          setColoniaCatalog(DEFAULT_COLONIES);
+        }
 
-    if (!savedUsers || currentUsers.length === 0) {
-      currentUsers = initialUsers;
-    } else {
-      // Ensure admin exists and has the correct password
-      const adminExists = currentUsers.find(u => u.username === 'admin');
-      if (!adminExists) {
-        currentUsers.unshift(initialUsers[0]);
-      } else if (adminExists.password !== 'adm123') {
-        // Force reset admin password for the user as requested
-        currentUsers = currentUsers.map(u => u.username === 'admin' ? { ...u, password: 'adm123' } : u);
+      } catch (error) {
+        console.error('Error fetching data from Supabase:', error);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
 
-    setUsers(currentUsers);
-    localStorage.setItem('ixta_users', JSON.stringify(currentUsers));
+    fetchData();
 
     const savedUser = localStorage.getItem('ixta_user');
     if (savedUser) setUser(JSON.parse(savedUser));
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('ixta_operatives', JSON.stringify(operatives));
-  }, [operatives]);
-
-  useEffect(() => {
-    localStorage.setItem('ixta_users', JSON.stringify(users));
-  }, [users]);
-
-  useEffect(() => {
-    if (opTypes.length > 0) localStorage.setItem('ixta_full_op_types', JSON.stringify(opTypes));
-  }, [opTypes]);
-
-  useEffect(() => {
-    if (coloniaCatalog.length > 0) localStorage.setItem('ixta_colonia_catalog', JSON.stringify(coloniaCatalog));
-  }, [coloniaCatalog]);
+  // No longer syncing whole state to localStorage as primary source
 
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('ixta_user');
   };
 
-  const addOperative = (op: Operative) => {
-    setOperatives(prev => [op, ...prev]);
+  const addOperative = async (op: Operative) => {
+    const { error } = await supabase.from('operatives').insert([op]);
+    if (!error) setOperatives(prev => [op, ...prev]);
+    else alert('Error al guardar en la nube: ' + error.message);
   };
 
-  const updateOperative = (id: string, updates: Partial<Operative>) => {
-    setOperatives(prev => prev.map(op => op.id === id ? { ...op, ...updates } : op));
+  const updateOperative = async (id: string, updates: Partial<Operative>) => {
+    const { error } = await supabase.from('operatives').update(updates).eq('id', id);
+    if (!error) setOperatives(prev => prev.map(op => op.id === id ? { ...op, ...updates } : op));
+    else alert('Error al actualizar en la nube: ' + error.message);
   };
 
-  const deleteOperative = (id: string) => {
-    setOperatives(prev => prev.filter(op => op.id !== id));
+  const deleteOperative = async (id: string) => {
+    if (!confirm('¿ESTÁ SEGURO DE ELIMINAR ESTE OPERATIVO?')) return;
+    const { error } = await supabase.from('operatives').delete().eq('id', id);
+    if (!error) setOperatives(prev => prev.filter(op => op.id !== id));
+    else alert('Error al eliminar en la nube: ' + error.message);
   };
 
-  const updatePassword = (newPassword: string) => {
+  const updatePassword = async (newPassword: string) => {
     if (!user) return;
-    const updatedUsers = users.map(u => u.id === user.id ? { ...u, password: newPassword } : u);
-    setUsers(updatedUsers);
-    const updatedSelf = { ...user, password: newPassword };
-    setUser(updatedSelf);
-    localStorage.setItem('ixta_user', JSON.stringify(updatedSelf));
-    alert('CONTRASEÑA ACTUALIZADA CORRECTAMENTE');
+    const { error } = await supabase.from('profiles').update({ password: newPassword }).eq('id', user.id);
+    if (!error) {
+      const updatedSelf = { ...user, password: newPassword };
+      setUser(updatedSelf);
+      setUsers(prev => prev.map(u => u.id === user.id ? updatedSelf : u));
+      localStorage.setItem('ixta_user', JSON.stringify(updatedSelf));
+      alert('CONTRASEÑA ACTUALIZADA CORRECTAMENTE');
+    } else {
+      alert('Error al actualizar contraseña: ' + error.message);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Shield className="w-12 h-12 text-blue-500 animate-pulse" />
+          <p className="text-blue-500 font-black tracking-widest text-sm animate-pulse">CARGANDO SISTEMA...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return <Login users={users} onLogin={(u) => { setUser(u); localStorage.setItem('ixta_user', JSON.stringify(u)); }} />;
   }
 
   // Permission Checks
-  const canViewDashboard = ['ADMIN', 'DIRECTOR', 'REGIONAL', 'SHIFT_LEADER', 'JEFE_AGRUPAMIENTO', 'ANALISTA'].includes(user.role);
+  const canViewDashboard = ['ADMIN', 'DIRECTOR', 'REGIONAL', 'JEFE_DE_TURNO', 'JEFE_AGRUPAMIENTO', 'ANALISTA'].includes(user.role);
   const canViewStats = ['ADMIN', 'DIRECTOR', 'REGIONAL', 'JEFE_AGRUPAMIENTO', 'ANALISTA'].includes(user.role);
   const canAddOp = !['DIRECTOR', 'ANALISTA'].includes(user.role);
   const canManageUsers = user.role === 'ADMIN';
@@ -161,7 +170,7 @@ const App: React.FC = () => {
           <div className="hidden md:flex items-center justify-center py-6 w-full">
             <Shield className="w-10 h-10 text-blue-500" />
           </div>
-          
+
           <div className="flex md:flex-col overflow-x-auto md:overflow-x-visible no-scrollbar w-full md:h-full items-center px-2 py-2 md:py-0 gap-1 md:gap-4 scroll-smooth">
             {canViewDashboard ? (
               <NavLink to="/" icon={<LayoutDashboard />} label="PANEL" />
@@ -189,8 +198,8 @@ const App: React.FC = () => {
               <NavLink to="/profile" icon={<Key />} label="CONTRASEÑA" />
             )}
 
-            <button 
-              onClick={handleLogout} 
+            <button
+              onClick={handleLogout}
               className="flex flex-col items-center justify-center shrink-0 w-20 h-16 md:w-16 md:h-16 rounded-xl text-red-500 hover:bg-red-500/10 transition-all md:mt-auto md:mb-6"
             >
               <LogOut className="w-6 h-6" />
@@ -220,8 +229,8 @@ const NavLink: React.FC<{ to: string, icon: React.ReactNode, label: string }> = 
   const location = useLocation();
   const isActive = location.pathname === to;
   return (
-    <Link 
-      to={to} 
+    <Link
+      to={to}
       className={`flex flex-col items-center justify-center shrink-0 w-20 h-16 md:w-16 md:h-16 rounded-xl transition-all ${isActive ? 'bg-blue-600/20 text-blue-500' : 'text-slate-400 hover:bg-slate-800'}`}
     >
       {/* Cast to any to bypass type error for Lucide icon cloning */}

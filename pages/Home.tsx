@@ -18,11 +18,11 @@ const Home: React.FC<HomeProps> = ({ operatives, showAll = false, user }) => {
     let list = operatives;
 
     // 1. Role-based visibility
-    if (['REGIONAL', 'SHIFT_LEADER', 'JEFE_AGRUPAMIENTO'].includes(user.role)) {
+    if (['REGIONAL', 'JEFE_DE_TURNO', 'JEFE_AGRUPAMIENTO'].includes(user.role)) {
       if (!user.isAgrupamiento && user.assignedRegion) {
         list = list.filter(op => op.region === user.assignedRegion);
       }
-    } else if (user.role === 'QUADRANT_LEADER' || user.role === 'PATROLMAN') {
+    } else if (user.role === 'JEFE_DE_CUADRANTE' || user.role === 'PATRULLERO') {
       list = list.filter(op => op.createdBy === user.id);
     }
 
@@ -34,8 +34,8 @@ const Home: React.FC<HomeProps> = ({ operatives, showAll = false, user }) => {
     // 3. Search filter
     if (search) {
       const normalizedSearch = removeAccents(search);
-      list = list.filter(op => 
-        removeAccents(op.id).includes(normalizedSearch) || 
+      list = list.filter(op =>
+        removeAccents(op.id).includes(normalizedSearch) ||
         removeAccents(op.region).includes(normalizedSearch) ||
         removeAccents(op.type).includes(normalizedSearch) ||
         removeAccents(op.location.colony).includes(normalizedSearch)
@@ -96,16 +96,16 @@ const Home: React.FC<HomeProps> = ({ operatives, showAll = false, user }) => {
               <span className="text-3xl font-black text-white">{filtered.length}</span>
             </div>
             <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-col items-center justify-center">
-               <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest">TERMINADOS</span>
-               <span className="text-3xl font-black text-slate-400">{concluded.length}</span>
+              <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest">TERMINADOS</span>
+              <span className="text-3xl font-black text-slate-400">{concluded.length}</span>
             </div>
           </div>
         )}
 
         <div className="relative group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="BUSCAR POR ID, REGION O COLONIA..."
             className="w-full bg-slate-900 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all text-sm shadow-xl uppercase"
             value={search}
@@ -164,9 +164,9 @@ const OperativeCard: React.FC<{ op: Operative }> = ({ op }) => (
         {op.status}
       </span>
     </div>
-    
+
     <h4 className="text-lg font-black mb-4 text-slate-100 group-hover:text-blue-400 transition-colors leading-tight uppercase">{removeAccents(op.type)}</h4>
-    
+
     <div className="grid grid-cols-2 gap-4 text-slate-400 text-xs">
       <div className="flex items-center gap-2 bg-slate-950/50 p-2 rounded-xl">
         <MapPin className="w-3.5 h-3.5 text-blue-500" />

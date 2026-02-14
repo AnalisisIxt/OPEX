@@ -1,13 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ChevronLeft, 
-  Clock, 
-  MapPin, 
-  Shield, 
-  Users, 
-  Car, 
-  Bike, 
+import {
+  ChevronLeft,
+  Clock,
+  MapPin,
+  Shield,
+  Users,
+  Car,
+  Bike,
   Users2,
   CheckCircle2,
   Trash2,
@@ -46,7 +46,7 @@ const OperativeDetails: React.FC<OperativeDetailsProps> = ({ operatives, updateO
 
   // Is this a neighborhood meeting?
   const isReunionVecinal = operative?.type.includes("REUNION VECINAL");
-  
+
   // Restricted visibility check for neighborhood meeting results
   const canSeeReunionResults = ['ADMIN', 'DIRECTOR', 'ANALISTA'].includes(role);
 
@@ -59,7 +59,7 @@ const OperativeDetails: React.FC<OperativeDetailsProps> = ({ operatives, updateO
   const [motorcycles, setMotorcycles] = useState(0);
   const [people, setPeople] = useState(0);
   const [result, setResult] = useState<ResultType>("DISUACION");
-  
+
   // Reunion specific state
   const [repName, setRepName] = useState("");
   const [repPhone, setRepPhone] = useState("");
@@ -96,7 +96,7 @@ const OperativeDetails: React.FC<OperativeDetailsProps> = ({ operatives, updateO
 
   if (!operative) return <div className="p-10 text-center uppercase">OPERATIVO NO ENCONTRADO</div>;
 
-  const canModify = operative.createdBy === userId || ['ADMIN', 'REGIONAL', 'SHIFT_LEADER', 'JEFE_AGRUPAMIENTO'].includes(role);
+  const canModify = operative.createdBy === userId || ['ADMIN', 'REGIONAL', 'JEFE_DE_TURNO', 'JEFE_AGRUPAMIENTO'].includes(role);
   const isAdmin = role === 'ADMIN';
 
   const startEdit = () => {
@@ -209,33 +209,33 @@ const OperativeDetails: React.FC<OperativeDetailsProps> = ({ operatives, updateO
             <div className="grid grid-cols-2 gap-4">
               <label className="block">
                 <span className="text-[10px] text-slate-500 uppercase font-black">REGION</span>
-                <select 
+                <select
                   className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white uppercase"
                   value={editForm.region}
-                  onChange={e => setEditForm({...editForm, region: e.target.value, quadrant: '', location: { ...editForm.location!, colony: '' }})}
+                  onChange={e => setEditForm({ ...editForm, region: e.target.value, quadrant: '', location: { ...editForm.location!, colony: '' } })}
                 >
                   {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </label>
               <label className="block">
                 <span className="text-[10px] text-slate-500 uppercase font-black">CUADRANTE</span>
-                <select 
+                <select
                   className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white uppercase"
                   value={editForm.quadrant}
-                  onChange={e => setEditForm({...editForm, quadrant: e.target.value})}
+                  onChange={e => setEditForm({ ...editForm, quadrant: e.target.value })}
                 >
                   <option value="">--</option>
                   {(REGION_QUADRANTS[editForm.region!] || []).map(q => <option key={q} value={q}>{q}</option>)}
                 </select>
               </label>
             </div>
-            
+
             <label className="block">
               <span className="text-[10px] text-slate-500 uppercase font-black">COLONIA</span>
-              <select 
+              <select
                 className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white uppercase"
                 value={editForm.location?.colony}
-                onChange={e => setEditForm({...editForm, location: {...editForm.location!, colony: e.target.value}})}
+                onChange={e => setEditForm({ ...editForm, location: { ...editForm.location!, colony: e.target.value } })}
               >
                 <option value="">--</option>
                 {regionColonies.map(c => <option key={c} value={c}>{c}</option>)}
@@ -245,44 +245,44 @@ const OperativeDetails: React.FC<OperativeDetailsProps> = ({ operatives, updateO
             <div className="grid grid-cols-2 gap-4">
               <label className="block">
                 <span className="text-[10px] text-slate-500 uppercase font-black">CALLE</span>
-                <input 
+                <input
                   type="text"
                   className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white uppercase"
                   value={editForm.location?.street}
-                  onChange={e => setEditForm({...editForm, location: {...editForm.location!, street: removeAccents(e.target.value)}})}
+                  onChange={e => setEditForm({ ...editForm, location: { ...editForm.location!, street: removeAccents(e.target.value) } })}
                 />
               </label>
               <label className="block">
                 <span className="text-[10px] text-slate-500 uppercase font-black">ESQUINA</span>
-                <input 
+                <input
                   type="text"
                   className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white uppercase"
                   value={editForm.location?.corner}
-                  onChange={e => setEditForm({...editForm, location: {...editForm.location!, corner: removeAccents(e.target.value)}})}
+                  onChange={e => setEditForm({ ...editForm, location: { ...editForm.location!, corner: removeAccents(e.target.value) } })}
                 />
               </label>
             </div>
 
             <div className="space-y-4 pt-4 border-t border-slate-800">
-               <div className="flex items-center justify-between">
-                 <span className="text-[10px] text-slate-500 uppercase font-black">UNIDADES</span>
-                 <button onClick={addUnit} className="text-blue-500 hover:text-blue-400 p-1"><Plus className="w-4 h-4" /></button>
-               </div>
-               {editForm.units?.map(u => (
-                 <div key={u.id} className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2 uppercase">
-                    <div className="flex justify-between">
-                      <input className="bg-transparent font-bold text-sm text-blue-400 outline-none w-1/2 uppercase" value={u.unitNumber} onChange={e => updateUnit(u.id, 'unitNumber', e.target.value)} placeholder="UNIDAD" />
-                      <button onClick={() => removeUnit(u.id)} className="text-red-500"><X className="w-3 h-3" /></button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <select className="bg-slate-900 text-[10px] p-1 rounded uppercase" value={u.rank} onChange={e => updateUnit(u.id, 'rank', e.target.value)}>
-                        {RANKS.map(r => <option key={r} value={r}>{r}</option>)}
-                      </select>
-                      {/* Fixed broken onChange handler for the 'inCharge' field */}
-                      <input className="bg-slate-900 text-[10px] p-1 rounded uppercase" value={u.inCharge} onChange={e => updateUnit(u.id, 'inCharge', e.target.value)} placeholder="RESPONSABLE" />
-                    </div>
-                 </div>
-               ))}
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-slate-500 uppercase font-black">UNIDADES</span>
+                <button onClick={addUnit} className="text-blue-500 hover:text-blue-400 p-1"><Plus className="w-4 h-4" /></button>
+              </div>
+              {editForm.units?.map(u => (
+                <div key={u.id} className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2 uppercase">
+                  <div className="flex justify-between">
+                    <input className="bg-transparent font-bold text-sm text-blue-400 outline-none w-1/2 uppercase" value={u.unitNumber} onChange={e => updateUnit(u.id, 'unitNumber', e.target.value)} placeholder="UNIDAD" />
+                    <button onClick={() => removeUnit(u.id)} className="text-red-500"><X className="w-3 h-3" /></button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select className="bg-slate-900 text-[10px] p-1 rounded uppercase" value={u.rank} onChange={e => updateUnit(u.id, 'rank', e.target.value)}>
+                      {RANKS.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                    {/* Fixed broken onChange handler for the 'inCharge' field */}
+                    <input className="bg-slate-900 text-[10px] p-1 rounded uppercase" value={u.inCharge} onChange={e => updateUnit(u.id, 'inCharge', e.target.value)} placeholder="RESPONSABLE" />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -298,7 +298,7 @@ const OperativeDetails: React.FC<OperativeDetailsProps> = ({ operatives, updateO
               <h3 className="text-2xl font-black uppercase leading-tight">{removeAccents(operative.type)}</h3>
               <p className="opacity-90 text-sm mt-1 font-bold">REGION {removeAccents(operative.region)} • CUADRANTE {operative.quadrant}</p>
             </div>
-            
+
             <div className="p-6 space-y-6">
               <div className="grid grid-cols-2 gap-6">
                 <div className="flex items-center gap-3">
@@ -324,7 +324,7 @@ const OperativeDetails: React.FC<OperativeDetailsProps> = ({ operatives, updateO
                     <Sparkles className="w-4 h-4 text-purple-400" />
                     <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">INTELIGENCIA DE ZONA</h4>
                   </div>
-                  <button 
+                  <button
                     onClick={handleFetchInsights}
                     disabled={loadingInsights}
                     className="text-[9px] font-black bg-blue-600/10 text-blue-400 px-3 py-1.5 rounded-lg border border-blue-500/20 hover:bg-blue-600/20 transition-all disabled:opacity-50 uppercase"
@@ -332,7 +332,7 @@ const OperativeDetails: React.FC<OperativeDetailsProps> = ({ operatives, updateO
                     {loadingInsights ? 'CONSULTANDO...' : insights ? 'RE-ACTUALIZAR' : 'VER ENTORNO'}
                   </button>
                 </div>
-                
+
                 {insights && (
                   <div className="text-xs text-slate-300 leading-relaxed bg-slate-900/50 p-3 rounded-xl border border-slate-800 animate-in fade-in uppercase">
                     <p>{removeAccents(insights)}</p>
@@ -365,37 +365,37 @@ const OperativeDetails: React.FC<OperativeDetailsProps> = ({ operatives, updateO
               {operative.status === 'CONCLUIDO' && operative.conclusion && (
                 <div className="pt-6 border-t border-slate-800 space-y-4 animate-in fade-in uppercase">
                   <h4 className="text-xs font-black uppercase text-emerald-500 tracking-widest">RESUMEN DE RESULTADOS</h4>
-                  
+
                   {isReunionVecinal ? (
                     canSeeReunionResults ? (
                       <div className="space-y-4 bg-blue-600/10 p-4 rounded-2xl border border-blue-500/20">
                         <div className="flex items-start gap-3">
-                           <UserIcon className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                           <div>
-                              <p className="text-[9px] font-black text-blue-500/60 uppercase">REPRESENTANTE</p>
-                              <p className="text-sm font-bold">{operative.conclusion.reunionDetails?.representativeName}</p>
-                           </div>
+                          <UserIcon className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-[9px] font-black text-blue-500/60 uppercase">REPRESENTANTE</p>
+                            <p className="text-sm font-bold">{operative.conclusion.reunionDetails?.representativeName}</p>
+                          </div>
                         </div>
                         <div className="flex items-start gap-3">
-                           <Phone className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                           <div>
-                              <p className="text-[9px] font-black text-blue-500/60 uppercase">TELEFONO</p>
-                              <p className="text-sm font-bold">{operative.conclusion.reunionDetails?.phone}</p>
-                           </div>
+                          <Phone className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-[9px] font-black text-blue-500/60 uppercase">TELEFONO</p>
+                            <p className="text-sm font-bold">{operative.conclusion.reunionDetails?.phone}</p>
+                          </div>
                         </div>
                         <div className="flex items-start gap-3">
-                           <Users className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                           <div>
-                              <p className="text-[9px] font-black text-blue-500/60 uppercase">PARTICIPANTES</p>
-                              <p className="text-sm font-bold">{operative.conclusion.reunionDetails?.participantCount}</p>
-                           </div>
+                          <Users className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-[9px] font-black text-blue-500/60 uppercase">PARTICIPANTES</p>
+                            <p className="text-sm font-bold">{operative.conclusion.reunionDetails?.participantCount}</p>
+                          </div>
                         </div>
                         <div className="flex items-start gap-3">
-                           <MessageSquare className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                           <div>
-                              <p className="text-[9px] font-black text-blue-500/60 uppercase">SOLICITUDES</p>
-                              <p className="text-sm font-medium italic">{operative.conclusion.reunionDetails?.petitions}</p>
-                           </div>
+                          <MessageSquare className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-[9px] font-black text-blue-500/60 uppercase">SOLICITUDES</p>
+                            <p className="text-sm font-medium italic">{operative.conclusion.reunionDetails?.petitions}</p>
+                          </div>
                         </div>
                       </div>
                     ) : (
@@ -429,7 +429,7 @@ const OperativeDetails: React.FC<OperativeDetailsProps> = ({ operatives, updateO
           </section>
 
           {operative.status === 'ACTIVO' && canModify && !isConcluding && (
-            <button 
+            <button
               onClick={() => setIsConcluding(true)}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 uppercase"
             >
